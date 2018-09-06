@@ -1,0 +1,133 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Canvas</title>
+	<style>
+		html, body {
+		  width:  100%;
+		  height: 100%;
+		  margin: 0px;
+		  border: 0;
+		  overflow: hidden; 
+			display: block;  
+		}
+	</style>
+</head>
+<body>
+	<canvas id="drawing"></canvas>
+	<script>
+		let canvas = document.getElementById("drawing");
+		canvas.width = window.innerWidth;
+		canvas.height = window.innerHeight;
+		let ctx = canvas.getContext("2d");
+
+		let pointsArr = [];
+		let pointsCopy = [];
+		let zIndex = 0;
+
+		const requestAnimationFrame = window.requestAnimationFrame || 
+									window.mozRequestAnimationFrame ||
+									window.webkitRequestAnimationFrame ||
+									window.msRequestAnimationFrame;
+
+		window.onload = function() {
+		  getPoints();
+			arrangePoints(0);
+			drawRiley();
+		};
+
+		function getPoints(){
+			for(let i = 1; i < 11; i++) {
+				let points = [];
+				let cX = canvas.width/2;
+				let radius=0;
+				let cY = 0;
+				if(canvas.width < 321){
+					radius = (6+i)*i;
+					cY = canvas.height/3 * 2 - 7*i;
+				} else if(canvas.width < 415){
+					radius = (9+i)*i;
+					cY = canvas.height/3 * 2 - 7*i;
+				} else {
+					radius = (18+2*i)*i;
+					cY = canvas.height/3 * 2 - 15*i;
+				}
+				for(let deg = 0; deg < 360; deg += 6) {  //I change to get points every 2 degree to get points every 6 degree to make the animation look better. 
+					let pX = radius * Math.cos(2*Math.PI/360 * deg) + cX;
+					let pY = radius * Math.sin(2*Math.PI/360 * deg) + cY;
+					points.push([pX, pY]);
+				}
+				pointsArr.push(points);
+			}
+		}
+		
+		function arrangePoints(a) {
+			pointsCopy = pointsArr.slice(0);
+			for(let i = 0; i < 11; i++) {
+				if (i % 2) {
+					pointsCopy[i] = pointsCopy[i].slice(a).concat(pointsCopy[i].slice(0, a));
+				}
+			}
+		}
+		
+		function drawRiley(){
+			// requestAnimationFrame(drawRiley); // looks better without this
+			for(let j = 0; j < pointsCopy.length-1; j++) {
+				for(let k = 0; k < pointsCopy[j].length; k++) {
+					if(!(j%2)) {
+						if(!(k%2)){
+							let [curX, curY] = pointsCopy[j][k];
+							let [nextX, nextY] = pointsCopy[j+1][k];
+							ctx.beginPath();
+							ctx.lineWidth = j+1;
+							if(canvas.width < 415){
+								ctx.lineWidth = (j+1)*0.4;
+							} else {
+								ctx.lineWidth = j+0.5;
+							}
+							ctx.moveTo(curX,curY);
+							ctx.lineTo(nextX,nextY);
+							ctx.stroke();
+							ctx.closePath();
+						}
+					} else {
+						if(k%2){
+							let [curX, curY] = pointsCopy[j][k];
+							let [nextX, nextY] = pointsCopy[j+1][k];
+							ctx.beginPath();
+							if(canvas.width < 321) {
+								ctx.lineWidth = (j+1)*0.3;
+							} else if(canvas.width < 415){
+								ctx.lineWidth = (j+1)*0.4;
+							} else {
+								ctx.lineWidth = j+0.5;
+							}
+							ctx.moveTo(curX,curY);
+							ctx.lineTo(nextX,nextY);
+							ctx.stroke();
+							ctx.closePath();
+						}
+					}
+				}
+			}
+		}
+		window.addEventListener("devicemotion", handleMotionEvent, true);
+
+		function handleMotionEvent(event) {
+	    let z = Math.round(Math.abs(event.accelerationIncludingGravity.z));
+	    if (zIndex !== z){
+	    	ctx.clearRect(0, 0, canvas.width, canvas.height);
+				
+				arrangePoints(zIndex);
+				zIndex = z;
+				drawRiley();
+	    }
+		}
+
+	</script>
+</body>
+</html>
